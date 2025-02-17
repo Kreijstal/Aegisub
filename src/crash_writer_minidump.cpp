@@ -31,7 +31,9 @@
 #include <Windows.h>
 #include <DbgHelp.h>
 
+#if wxUSE_CRASHREPORT != 0 
 extern EXCEPTION_POINTERS *wxGlobalSEInformation;
+#endif
 
 namespace {
 wchar_t crash_dump_path[MAX_PATH];
@@ -60,7 +62,7 @@ struct dump_thread_state {
 	dump_thread_state() : thread([&] { main(); }) { }
 
 	void main() {
-		auto module = LoadLibrary(L"dbghelp.dll");
+		auto module = LoadLibraryW(L"dbghelp.dll");
 		if (!module) return;
 
 		auto fn = reinterpret_cast<MiniDumpWriteDump>(GetProcAddress(module, "MiniDumpWriteDump"));
@@ -77,7 +79,7 @@ struct dump_thread_state {
 	}
 
 	void write_dump(MiniDumpWriteDump fn) {
-		auto file = CreateFile(crash_dump_path,
+		auto file = CreateFileW(crash_dump_path,
 			GENERIC_WRITE,
 			0,  // no sharing
 			nullptr,
@@ -131,7 +133,11 @@ void Cleanup() {
 }
 
 void Write() {
+#if wxUSE_CRASHREPORT != 0
 	dump_thread->ep = wxGlobalSEInformation;
+#else
+	dump_thread->ep = nullptr;
+#endif
 	dump_thread->thread_id = GetCurrentThreadId();
 	dump_thread->start_cv.notify_all();
 	dump_thread->thread.join();

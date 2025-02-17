@@ -51,18 +51,24 @@ tests_inc = include_directories('support')
 tests_args = []
 
 # force UTF8 for MSVC
-if host_machine.system() == 'windows'
+
+# Force UTF-8 for MSVC on Windows
+if host_machine.system() == 'windows' and meson.get_compiler('cpp').get_id() == 'msvc'
     tests_args += ['/utf-8']
 elif host_machine.system() == 'darwin'
     tests_args += ['-DGTEST_HAS_POSIX_RE=0']
 endif
-
+link_args = []
+if host_machine.system() == 'windows' and meson.get_compiler('cpp').get_id() != 'msvc'
+    link_args += ['-lws2_32']
+endif
 runner = executable(
     'gtest-main',
     tests_src,
     include_directories: [tests_inc, libaegisub_inc],
     dependencies: [tests_deps, deps],
     cpp_args: tests_args,
+    link_args: link_args,
     link_with: libaegisub,
 )
 

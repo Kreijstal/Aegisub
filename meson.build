@@ -129,7 +129,7 @@ deps += dependency('zlib')
 
 wx_dep = dependency('wxWidgets', version: '>=' + get_option('wx_version'),
                     required: false,
-                    modules: ['std', 'stc', 'gl'])
+                    modules: ['std', 'stc', 'gl','base'])
 
 if wx_dep.found()
     deps += wx_dep
@@ -410,9 +410,13 @@ aegisub_c_pch = ['src/include/agi_pre_c.h']
 link_args = []
 link_depends = []
 if host_machine.system() == 'windows'
-    manifest_file = configure_file(copy: true, input: 'src/res/aegisub.exe.manifest', output: 'aegisub.exe.manifest')
-    link_args += ['/MANIFEST:EMBED', '/MANIFESTINPUT:@0@'.format(manifest_file)]
-    link_depends += manifest_file
+    if cxx.get_id() == 'msvc'
+        manifest_file = configure_file(copy: true, input: 'src/res/aegisub.exe.manifest', output: 'aegisub.exe.manifest')
+        link_args += ['/MANIFEST:EMBED', '/MANIFESTINPUT:@0@'.format(manifest_file)]
+        link_depends += manifest_file
+    else
+        link_args += ['-lws2_32']
+    endif
 endif
 
 aegisub = executable('aegisub', aegisub_src, version_h, resrc, aegisub_order_dep,

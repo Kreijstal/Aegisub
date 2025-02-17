@@ -199,17 +199,33 @@ elif host_machine.system() == 'windows'
                 wx_windres_args += arg
             endif
         endforeach
-        aegisub_src += windows.compile_resources('res/res.rc',
-                                                 args: wx_windres_args,
-                                                 depend_files: res_dep_files,
-                                                 depends: version_h,
-                                                 include_directories: [res_inc, version_inc])
+        if cc.get_id() == 'msvc'
+            aegisub_src += windows.compile_resources('res/res.rc',
+                                                     args: wx_windres_args,
+                                                     depend_files: res_dep_files,
+                                                     depends: version_h,
+                                                     include_directories: [res_inc, version_inc])
+        else
+            aegisub_src += windows.compile_resources('res/res.rc',
+                                                     args: wx_windres_args + ['-D_MINGW'],
+                                                     depend_files: res_dep_files,
+                                                     depends: version_h,
+                                                     include_directories: [res_inc, version_inc])
+        endif
     else # subproject
         wx_inc = wx.include_directories('wxmono')
-        aegisub_src += windows.compile_resources('res/res.rc',
-                                                 depend_files: res_dep_files,
-                                                 depends: version_h,
-                                                 include_directories: [res_inc, version_inc, wx_inc])
+        if cc.get_id() == 'msvc'
+            aegisub_src += windows.compile_resources('res/res.rc',
+                                                     depend_files: res_dep_files,
+                                                     depends: version_h,
+                                                     include_directories: [res_inc, version_inc, wx_inc])
+        else
+            aegisub_src += windows.compile_resources('res/res.rc',
+                                                     args: ['-D_MINGW'],
+                                                     depend_files: res_dep_files,
+                                                     depends: version_h,
+                                                     include_directories: [res_inc, version_inc, wx_inc])
+        endif
     endif
     aegisub_src += windows.compile_resources('res/strings.rc')
 endif

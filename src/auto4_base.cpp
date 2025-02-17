@@ -87,7 +87,7 @@ namespace Automation4 {
 		lf.lfPitchAndFamily = DEFAULT_PITCH|FF_DONTCARE;
 		wcsncpy(lf.lfFaceName, agi::charset::ConvertW(style->font).c_str(), 31);
 
-		auto font = CreateFontIndirect(&lf);
+		auto font = CreateFontIndirectW(&lf);
 		if (!font) return false;
 
 		auto old_font = SelectObject(dc, font);
@@ -97,14 +97,14 @@ namespace Automation4 {
 			width = 0;
 			for (auto c : wtext) {
 				SIZE sz;
-				GetTextExtentPoint32(dc, &c, 1, &sz);
+				GetTextExtentPoint32W(dc, &c, 1, &sz);
 				width += sz.cx + spacing;
 				height = sz.cy;
 			}
 		}
 		else {
 			SIZE sz;
-			GetTextExtentPoint32(dc, &wtext[0], (int)wtext.size(), &sz);
+			GetTextExtentPoint32W(dc, &wtext[0], (int)wtext.size(), &sz);
 			width = sz.cx;
 			height = sz.cy;
 		}

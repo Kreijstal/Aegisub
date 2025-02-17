@@ -32,16 +32,16 @@ using agi::charset::ConvertLocal;
 
 namespace agi { namespace fs {
 std::string ShortName(path const& p) {
-	DWORD length = GetShortPathName(p.c_str(), NULL, 0);
+	DWORD length = GetShortPathNameA(p.string().c_str(), NULL, 0);
 	if (!length)
 		return p.string();
 
-	std::wstring out(length, 0);
-	DWORD len = GetShortPathName(p.c_str(), out.data(), out.size());
+	std::string out(length, 0);
+	DWORD len = GetShortPathNameA(p.string().c_str(), out.data(), out.size());
 	if (!len)
 		return p.string();
 	out.resize(len);
-	return ConvertLocal(out);
+	return out;
 }
 
 void Touch(path const& file) {
@@ -54,7 +54,7 @@ void Touch(path const& file) {
 		throw EnvironmentError("SystemTimeToFileTime failed with error: " + util::ErrorString(GetLastError()));
 
 	scoped_holder<HANDLE, BOOL (__stdcall *)(HANDLE)>
-		h(CreateFile(file.c_str(), GENERIC_WRITE, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr), CloseHandle);
+		h(CreateFileA(file.string().c_str(), GENERIC_WRITE, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr), CloseHandle);
 	// error handling etc.
 	if (!SetFileTime(h, nullptr, nullptr, &ft))
 		throw EnvironmentError("SetFileTime failed with error: " + util::ErrorString(GetLastError()));
@@ -63,7 +63,7 @@ void Touch(path const& file) {
 void Copy(fs::path const& from, fs::path const& to) {
 	CreateDirectory(to.parent_path());
 
-	if (!CopyFile(from.wstring().c_str(), to.wstring().c_str(), false)) {
+	if (!CopyFileA(from.string().c_str(), to.string().c_str(), false)) {
 		switch (GetLastError()) {
 		case ERROR_FILE_NOT_FOUND:
 			throw FileNotFound(from);
@@ -84,13 +84,13 @@ DirectoryIterator::DirectoryIterator(path const& p, std::string const& filter)
 : privdata(new PrivData)
 {
 	WIN32_FIND_DATA data;
-	privdata->h = FindFirstFileEx((p/(filter.empty() ? "*.*" : filter)).c_str(), FindExInfoBasic, &data, FindExSearchNameMatch, nullptr, 0);
+	privdata->h = FindFirstFileExA((p/(filter.empty() ? "*.*" : filter)).string().c_str(), FindExInfoBasic, &data, FindExSearchNameMatch, nullptr, 0);
 	if (privdata->h == INVALID_HANDLE_VALUE) {
 		privdata.reset();
 		return;
 	}
 
-	value = ConvertW(data.cFileName);
+	value = data.cFileName;
 	while (value[0] == '.' && (value[1] == 0 || value[1] == '.'))
 		++*this;
 }
@@ -102,7 +102,7 @@ bool DirectoryIterator::operator==(DirectoryIterator const& rhs) const {
 DirectoryIterator& DirectoryIterator::operator++() {
 	WIN32_FIND_DATA data;
 	if (FindNextFile(privdata->h, &data))
-		value = ConvertW(data.cFileName);
+		value = data.cFileName;
 	else {
 		privdata.reset();
 		value.clear();

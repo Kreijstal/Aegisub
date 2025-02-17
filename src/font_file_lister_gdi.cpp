@@ -34,7 +34,7 @@
 /// @example For "C:\WINDOWS\FONTS\ARIAL.TTF", it would return "C:\Windows\Fonts\arial.ttf"
 std::wstring normalizeFilePathCase(std::wstring const& path) {
 	/* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-	HANDLE hfile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	HANDLE hfile = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 	if (hfile == INVALID_HANDLE_VALUE)
 		return L"";
 	agi::scoped_holder<HANDLE> hfile_sh(hfile, [](HANDLE hfile) { CloseHandle(hfile); });
@@ -44,7 +44,7 @@ std::wstring normalizeFilePathCase(std::wstring const& path) {
 		return L"";
 
 	agi::scoped_holder<WCHAR*> normalized_path_sh(new WCHAR[normalized_path_length + 1], [](WCHAR* p) { delete[] p; });
-	if (!GetFinalPathNameByHandle(hfile_sh, normalized_path_sh, normalized_path_length + 1, FILE_NAME_NORMALIZED))
+	if (!GetFinalPathNameByHandleW(hfile_sh, normalized_path_sh, normalized_path_length + 1, FILE_NAME_NORMALIZED))
 		return L"";
 
 	std::wstring normalized_path(normalized_path_sh);
@@ -110,7 +110,7 @@ CollectionResult GdiFontFileLister::GetFontPaths(std::string const& facename, in
 	lf.lfQuality = ANTIALIASED_QUALITY;
 	lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
 
-	agi::scoped_holder<HFONT> hfont_sh(CreateFontIndirect(&lf), [](HFONT p) { DeleteObject(p); });
+	agi::scoped_holder<HFONT> hfont_sh(CreateFontIndirectW(&lf), [](HFONT p) { DeleteObject(p); });
 	if (hfont_sh == nullptr)
 		return ret;
 

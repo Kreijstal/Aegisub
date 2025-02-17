@@ -53,7 +53,7 @@ is a short (and incomplete) todo
    requires detecting the filesystem being used.
 */
 void Check(fs::path const& file, acs::Type type) {
-	DWORD file_attr = GetFileAttributes(file.c_str());
+	DWORD file_attr = GetFileAttributesA(file.string().c_str());
 	if ((file_attr & INVALID_FILE_ATTRIBUTES) == INVALID_FILE_ATTRIBUTES) {
 		switch (GetLastError()) {
 			case ERROR_FILE_NOT_FOUND:
@@ -81,14 +81,14 @@ void Check(fs::path const& file, acs::Type type) {
 
 	SECURITY_INFORMATION info = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
 	DWORD len = 0;
-	GetFileSecurity(file.c_str(), info, nullptr, 0, &len);
+	GetFileSecurityA(file.string().c_str(), info, nullptr, 0, &len);
 	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
 		LOG_W("acs/check") << "GetFileSecurity: fatal: " << util::ErrorString(GetLastError());
 
 	std::vector<uint8_t> sd_buff(len);
 	SECURITY_DESCRIPTOR *sd = (SECURITY_DESCRIPTOR *)&sd_buff[0];
 
-	if (!GetFileSecurity(file.c_str(), info, sd, len, &len))
+	if (!GetFileSecurityA(file.string().c_str(), info, sd, len, &len))
 		LOG_W("acs/check") << "GetFileSecurity failed: " << util::ErrorString(GetLastError());
 
 	ImpersonateSelf(SecurityImpersonation);
